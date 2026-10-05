@@ -1,0 +1,73 @@
+name: Build Reno7 SE 5G SukiSU Kernel
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout kernel source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup OPPO MTK environment
+        shell: bash
+        run: |
+          echo "LLVM=1" >> "$GITHUB_ENV"
+          echo "LLVM_IAS=1" >> "$GITHUB_ENV"
+          echo "CROSS_COMPILE_COMPAT=arm-linux-gnueabi-" >> "$GITHUB_ENV"
+
+      - name: Build kernel with SukiSU-Ultra
+        uses: dabao1955/kernel_build_action@v1.10.4
+        with:
+          kernel-url: ./
+
+          arch: arm64
+          config: k6877v1_64_k419_defconfig
+
+          # Android 13 / OPPO Tiramisu toolchain
+          android-version: "13"
+          aosp-clang: true
+          aosp-clang-version: r433403b
+          aosp-gcc: true
+
+          # SukiSU-Ultra
+          ksu: true
+          ksu-other: true
+          ksu-url: https://github.com/SukiSU-Ultra/SukiSU-Ultra
+          ksu-lkm: false
+
+          # Additional SukiSU config
+          merge-configs: '["sukisu.config"]'
+
+          ccache: true
+
+          # 第一阶段先输出 AnyKernel3
+          anykernel3: true
+          release: false
+
+      - name: Upload raw kernel
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Reno7-SE-5G-SukiSU-Kernel
+          path: |
+            out/arch/arm64/boot/Image
+            out/arch/arm64/boot/Image.gz
+          if-no-files-found: warn
+
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-build-log
+          path: |
+            out/build.log
+          if-no-files-found: warn
