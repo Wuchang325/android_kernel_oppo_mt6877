@@ -29,13 +29,15 @@ jobs:
         with:
           kernel-url: ./
 
-          arch: arm64
           config: k6877v1_64_k419_defconfig
+          arch: arm64
 
-          # Android 13 / OPPO Tiramisu toolchain
-          android-version: "13"
-          aosp-clang: true
-          aosp-clang-version: r433403b
+          # OPPO MTK Android 13 kernel uses clang-r433403b
+          aosp-clang: false
+          other-clang-url: >-
+            https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/tags/android-s-v2-beta-2/clang-r433403b.tar.gz
+
+          # GCC 4.9 binutils for old MTK 4.19 vendor kernel
           aosp-gcc: true
 
           # SukiSU-Ultra
@@ -44,12 +46,11 @@ jobs:
           ksu-url: https://github.com/SukiSU-Ultra/SukiSU-Ultra
           ksu-lkm: false
 
-          # Additional SukiSU config
+          # SukiSU/KPM config
           merge-configs: '["sukisu.config"]'
 
           ccache: true
 
-          # 第一阶段先输出 AnyKernel3
           anykernel3: true
           release: false
 
@@ -58,16 +59,16 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Reno7-SE-5G-SukiSU-Kernel
+          if-no-files-found: warn
           path: |
             out/arch/arm64/boot/Image
             out/arch/arm64/boot/Image.gz
-          if-no-files-found: warn
 
       - name: Upload build log
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: kernel-build-log
+          if-no-files-found: warn
           path: |
             out/build.log
-          if-no-files-found: warn
